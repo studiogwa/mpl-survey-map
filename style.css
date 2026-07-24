@@ -57,6 +57,10 @@
   --gwa-dark-green: #779354;
   --gwa-dark-grey: #454948;
   --gwa-light-grey: #8b9987;
+  /* accent for RERZ boundaries — a warm, earthy tone from outside the core
+     palette so TIF (green) / OZ (grey) / RERZ (terracotta) read as three
+     clearly distinct hues on the map, while still complementing the greens */
+  --gwa-rerz-accent: #b5764a;
 
   --gwa-green-tint: #eef2e6;
   --gwa-border: #dde2d8;
@@ -306,8 +310,8 @@ button { font-family: inherit; cursor: pointer; }
   letter-spacing: 0.02em;
 }
 .sr-flag.on-tif { background: rgba(123,164,87,0.16); color: var(--gwa-mid-green); }
-.sr-flag.on-oz { background: rgba(119,147,84,0.16); color: var(--gwa-dark-green); }
-.sr-flag.on-rerz { background: rgba(150,172,83,0.18); color: #6d8a3d; }
+.sr-flag.on-oz { background: rgba(69,73,72,0.12); color: var(--gwa-dark-grey); }
+.sr-flag.on-rerz { background: rgba(181,118,74,0.16); color: var(--gwa-rerz-accent); }
 .search-no-results { padding: 14px 12px; font-size: 13px; color: var(--gwa-text-muted); }
 
 /* ===================== LEGEND ===================== */
@@ -324,10 +328,9 @@ button { font-family: inherit; cursor: pointer; }
 .legend-list label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gwa-text); cursor: pointer; }
 .legend-list input { accent-color: var(--gwa-mid-green); }
 .swatch { width: 13px; height: 13px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
-.swatch-tif { background: var(--gwa-mid-green); opacity: 0.55; border: 1.5px solid var(--gwa-mid-green); }
-.swatch-oz { background: var(--gwa-dark-green); opacity: 0.5; border: 1.5px solid var(--gwa-dark-green); }
-.swatch-rerz { background: var(--gwa-light-green); opacity: 0.55; border: 1.5px solid var(--gwa-light-green); }
-.swatch-parcels { background: var(--gwa-dark-grey); border: 1.5px solid var(--gwa-dark-grey); }
+.swatch-tif { background: var(--gwa-mid-green); opacity: 0.6; border: 1.5px solid var(--gwa-mid-green); }
+.swatch-oz { background: var(--gwa-dark-grey); opacity: 0.55; border: 1.5px solid var(--gwa-dark-grey); }
+.swatch-rerz { background: var(--gwa-rerz-accent); opacity: 0.65; border: 1.5px solid var(--gwa-rerz-accent); }
 
 /* ===================== EMPTY STATE ===================== */
 .empty-state {
@@ -336,7 +339,7 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--gwa-text-muted);
   flex: 1;
 }
-.empty-icon { font-size: 34px; margin-bottom: 14px; opacity: 0.8; }
+.empty-icon-ellipsis { height: 16px; margin-bottom: 18px; opacity: 0.65; }
 .empty-state h3 { font-family: var(--font-heading); font-size: 16px; color: var(--gwa-text); margin: 0 0 8px; }
 .empty-state p { font-size: 13px; line-height: 1.55; margin: 0; }
 

@@ -119,42 +119,46 @@ async function init() {
     data: parcelsData,
     promoteId: 'id',
   });
-  map.addSource('parcel-points', {
-    type: 'geojson',
-    data: centroidsData,
-    cluster: true,
-    clusterRadius: 48,
-    clusterMaxZoom: 14,
-  });
 
   setSplashProgress(75, 'Styling map layers…');
 
-  // ---- RERZ (light green) ----
+  // Boundary layers start hidden — the legend checkboxes turn them on.
+  // Colors are deliberately three distinct hues (not three shades of the
+  // same green) so overlapping boundaries stay legible: mid green for TIF,
+  // dark charcoal grey for Opportunity Zones, and a warm terracotta accent
+  // for the RERZ — the terracotta isn't in the core swatch set but reads as
+  // an earthy complement to the brand greens.
+
+  // ---- RERZ (terracotta accent) ----
   map.addLayer({
     id: 'rerz-fill',
     type: 'fill',
     source: 'rerz',
-    paint: { 'fill-color': '#96ac53', 'fill-opacity': 0.16 },
+    layout: { visibility: 'none' },
+    paint: { 'fill-color': '#b5764a', 'fill-opacity': 0.2 },
   });
   map.addLayer({
     id: 'rerz-outline',
     type: 'line',
     source: 'rerz',
-    paint: { 'line-color': '#96ac53', 'line-width': 1.6, 'line-dasharray': [2, 1] },
+    layout: { visibility: 'none' },
+    paint: { 'line-color': '#b5764a', 'line-width': 2 },
   });
 
-  // ---- OZ (dark green) ----
+  // ---- OZ (dark grey) ----
   map.addLayer({
     id: 'oz-fill',
     type: 'fill',
     source: 'oz',
-    paint: { 'fill-color': '#779354', 'fill-opacity': 0.14 },
+    layout: { visibility: 'none' },
+    paint: { 'fill-color': '#454948', 'fill-opacity': 0.14 },
   });
   map.addLayer({
     id: 'oz-outline',
     type: 'line',
     source: 'oz',
-    paint: { 'line-color': '#779354', 'line-width': 1.6 },
+    layout: { visibility: 'none' },
+    paint: { 'line-color': '#454948', 'line-width': 1.8, 'line-dasharray': [2, 1.4] },
   });
 
   // ---- TIF (mid green) ----
@@ -162,21 +166,22 @@ async function init() {
     id: 'tif-fill',
     type: 'fill',
     source: 'tif',
-    paint: { 'fill-color': '#7ba457', 'fill-opacity': 0.18 },
+    layout: { visibility: 'none' },
+    paint: { 'fill-color': '#7ba457', 'fill-opacity': 0.2 },
   });
   map.addLayer({
     id: 'tif-outline',
     type: 'line',
     source: 'tif',
-    paint: { 'line-color': '#7ba457', 'line-width': 1.4 },
+    layout: { visibility: 'none' },
+    paint: { 'line-color': '#7ba457', 'line-width': 1.6 },
   });
 
-  // ---- Parcel polygons (visible when zoomed in) ----
+  // ---- Parcel polygons (always visible, primary click target) ----
   map.addLayer({
     id: 'parcels-fill',
     type: 'fill',
     source: 'parcels-poly',
-    minzoom: 13.2,
     paint: {
       'fill-color': [
         'case',
@@ -195,7 +200,6 @@ async function init() {
     id: 'parcels-outline',
     type: 'line',
     source: 'parcels-poly',
-    minzoom: 13.2,
     paint: {
       'line-color': [
         'case',
@@ -210,67 +214,27 @@ async function init() {
     },
   });
 
-  // ---- Clustered points (gray -> green heat intensity) ----
-  map.addLayer({
-    id: 'clusters',
-    type: 'circle',
-    source: 'parcel-points',
-    filter: ['has', 'point_count'],
-    paint: {
-      'circle-color': [
-        'step',
-        ['get', 'point_count'],
-        '#c7cbc4', // low count = gray
-        3, '#a9b79b',
-        6, '#8bab6f',
-        10, '#7ba457',
-        16, '#5f8a41', // high count = deep green
-      ],
-      'circle-radius': [
-        'step',
-        ['get', 'point_count'],
-        15,
-        3, 18,
-        6, 21,
-        10, 25,
-        16, 29,
-      ],
-      'circle-stroke-width': 2,
-      'circle-stroke-color': '#ffffff',
-    },
-  });
-  map.addLayer({
-    id: 'cluster-count',
-    type: 'symbol',
-    source: 'parcel-points',
-    filter: ['has', 'point_count'],
-    layout: {
-      'text-field': ['get', 'point_count_abbreviated'],
-      'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
-      'text-size': 12,
-    },
-    paint: { 'text-color': '#ffffff' },
-  });
-  map.addLayer({
-    id: 'unclustered-point',
-    type: 'circle',
-    source: 'parcel-points',
-    filter: ['!', ['has', 'point_count']],
-    paint: {
-      'circle-color': '#779354',
-      'circle-radius': 7,
-      'circle-stroke-width': 2,
-      'circle-stroke-color': '#ffffff',
-    },
-  });
-
   setSplashProgress(100, 'Ready.');
   hideSplash();
 
   fitToParcels();
   bindMapInteractions();
   bindUI();
+  bindLayerToggles();
   checkDeepLink();
+}
+
+// ---------------- Layer toggles ----------------
+function bindLayerToggles() {
+  document.querySelectorAll('.legend-list input[type="checkbox"]').forEach((input) => {
+    const layer = input.dataset.layer;
+    input.addEventListener('change', () => {
+      const visibility = input.checked ? 'visible' : 'none';
+      [`${layer}-fill`, `${layer}-outline`].forEach((id) => {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visibility);
+      });
+    });
+  });
 }
 
 function fitToParcels() {
@@ -281,29 +245,13 @@ function fitToParcels() {
 
 // ---------------- Map interactions ----------------
 function bindMapInteractions() {
-  map.on('click', 'clusters', (e) => {
-    const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-    const clusterId = features[0].properties.cluster_id;
-    map.getSource('parcel-points').getClusterExpansionZoom(clusterId, (err, zoom) => {
-      if (err) return;
-      map.easeTo({ center: features[0].geometry.coordinates, zoom });
-    });
-  });
-
-  map.on('click', 'unclustered-point', (e) => {
-    const id = e.features[0].properties.id;
-    selectParcel(id, true);
-  });
-
   map.on('click', 'parcels-fill', (e) => {
     const id = e.features[0].properties.id;
     selectParcel(id, true);
   });
 
-  ['clusters', 'unclustered-point', 'parcels-fill'].forEach((layer) => {
-    map.on('mouseenter', layer, () => (map.getCanvas().style.cursor = 'pointer'));
-    map.on('mouseleave', layer, () => (map.getCanvas().style.cursor = ''));
-  });
+  map.on('mouseenter', 'parcels-fill', () => (map.getCanvas().style.cursor = 'pointer'));
+  map.on('mouseleave', 'parcels-fill', () => (map.getCanvas().style.cursor = ''));
 
   // hover highlight on parcel polygons
   map.on('mousemove', 'parcels-fill', (e) => {
