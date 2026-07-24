@@ -231,9 +231,12 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---- Mobile: bottom sheet over a full-screen map (Option A) ----
    The map fills the whole screen below the header; the sidebar becomes
-   a draggable sheet anchored to the bottom, collapsed to a small "peek"
-   (handle + search bar) by default. Tap the handle or drag it up to
-   reveal the legend, search results, or a selected property's snapshot.
+   a draggable sheet anchored to the bottom with three snap positions:
+     collapsed — just the handle + search bar peeking up
+     half      — panel covers ~48% of the screen, map still visible above it
+     full      — panel covers nearly the whole screen, for reading details
+   Tapping the handle cycles collapsed -> half -> full -> collapsed.
+   Dragging snaps to whichever position is closest on release.
    Desktop (>860px) is completely unaffected by this block. ------------- */
 .sheet-handle { display: none; }
 
@@ -255,16 +258,18 @@ button { font-family: inherit; cursor: pointer; }
     box-shadow: 0 -6px 20px rgba(0,0,0,0.14);
     z-index: 400;
     padding-bottom: env(safe-area-inset-bottom, 0);
-    transform: translateY(calc(100% - var(--sheet-peek, 108px)));
+    transform: translateY(var(--sheet-y, calc(100% - 108px)));
     transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
   }
   #sidebar.sheet-dragging { transition: none; }
-  #sidebar.sheet-expanded { transform: translateY(0); }
 
   .sheet-handle {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    padding: 10px 0 2px;
+    padding: 14px 0 12px;
     cursor: grab;
     touch-action: none;
     flex-shrink: 0;
@@ -272,7 +277,7 @@ button { font-family: inherit; cursor: pointer; }
   .sheet-handle-bar { width: 36px; height: 4px; border-radius: 2px; background: var(--gwa-border); }
 
   .sidebar-hed, .sidebar-copy { display: none; }
-  .sidebar-search-block { padding: 4px 20px 14px; border-bottom: none; flex-shrink: 0; }
+  .sidebar-search-block { padding: 0 20px 14px; border-bottom: none; flex-shrink: 0; }
 }
 
 /* ===================== SEARCH ===================== */

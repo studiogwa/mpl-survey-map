@@ -246,9 +246,15 @@ function fitToParcels() {
 
 // ---------------- Mobile bottom sheet (Option A) ----------------
 // Only affects layout under the 860px breakpoint defined in style.css.
-// The sheet starts collapsed to a "peek" (handle + search bar); tapping
-// the handle or dragging it up reveals the full panel. No-op on desktop.
+// Three snap positions so the map is never fully hidden unless the
+// viewer deliberately drags all the way up:
+//   collapsed — handle + search bar only
+//   half      — panel covers ~48% of the screen, map still visible above
+//   full      — panel covers nearly the whole screen
 const SHEET_PEEK_PX = 108;
+const SHEET_HALF_RATIO = 0.48; // fraction of sheet height visible in "half"
+const SHEET_FULL_MARGIN_PX = 56; // gap left at the top in "full", so the map peeks through
+
 let sheetExpandFn = null;
 let sheetCollapseFn = null;
 
@@ -257,56 +263,105 @@ function initSheet() {
   const handle = document.getElementById('sheet-handle');
   if (!sidebar || !handle) return;
 
+  const isMobile = () => window.matchMedia('(max-width: 860px)').matches;
+
+  // translateY in px for each state, computed against the sheet's current height
+  const snapPoints = () => {
+    const h = sidebar.offsetHeight || window.innerHeight;
+    return {
+      collapsed: Math.max(0, h - SHEET_PEEK_PX),
+      half: Math.max(0, h * (1 - SHEET_HALF_RATIO)),
+      full: Math.max(0, SHEET_FULL_MARGIN_PX),
+    };
+  };
+
+  let state = 'collapsed';
+  let currentY = snapPoints().collapsed;
+
+  function applyY(y, animate) {
+    currentY = y;
+    sidebar.classList.toggle('sheet-dragging', !animate);
+    sidebar.style.setProperty('--sheet-y', `${y}px`);
+  }
+
+  function goTo(nextState) {
+    state = nextState;
+    applyY(snapPoints()[nextState], true);
+  }
+
+  function nearestState(y) {
+    const pts = snapPoints();
+    let best = 'collapsed';
+    let bestDist = Infinity;
+    for (const key of Object.keys(pts)) {
+      const d = Math.abs(pts[key] - y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = key;
+      }
+    }
+    return best;
+  }
+
+  const cycle = { collapsed: 'half', half: 'full', full: 'collapsed' };
+
+  sheetExpandFn = () => { if (isMobile()) goTo('half'); };
+  sheetCollapseFn = () => { if (isMobile()) goTo('collapsed'); };
+
+  // Keep the sheet aligned to a valid snap point on resize/orientation change.
+  window.addEventListener('resize', () => {
+    if (!isMobile()) return;
+    applyY(snapPoints()[state], true);
+  });
+
+  // ---- Drag handling ----
+  // Listeners are attached to the window (not just the handle) once a drag
+  // starts, so fast or slightly-off-target finger movement doesn't drop
+  // the gesture partway through.
   let dragging = false;
   let moved = false;
   let startY = 0;
   let startTranslate = 0;
 
-  const isMobile = () => window.matchMedia('(max-width: 860px)').matches;
-  const maxDrag = () => sidebar.offsetHeight - SHEET_PEEK_PX;
-
-  const expand = () => sidebar.classList.add('sheet-expanded');
-  const collapse = () => sidebar.classList.remove('sheet-expanded');
-  const toggle = () => sidebar.classList.toggle('sheet-expanded');
-
-  sheetExpandFn = () => { if (isMobile()) expand(); };
-  sheetCollapseFn = () => { if (isMobile()) collapse(); };
-
-  handle.addEventListener('pointerdown', (e) => {
+  function onPointerDown(e) {
     if (!isMobile()) return;
     dragging = true;
     moved = false;
     startY = e.clientY;
-    startTranslate = sidebar.classList.contains('sheet-expanded') ? 0 : maxDrag();
-    sidebar.classList.add('sheet-dragging');
-    handle.setPointerCapture(e.pointerId);
-  });
+    startTranslate = currentY;
+    applyY(currentY, false);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+  }
 
-  handle.addEventListener('pointermove', (e) => {
+  function onPointerMove(e) {
     if (!dragging) return;
     const dy = e.clientY - startY;
     if (Math.abs(dy) > 4) moved = true;
-    const next = Math.max(0, Math.min(maxDrag(), startTranslate + dy));
-    sidebar.style.transform = `translateY(${next}px)`;
-  });
+    const pts = snapPoints();
+    const next = Math.max(pts.full, Math.min(pts.collapsed, startTranslate + dy));
+    applyY(next, false);
+  }
 
-  const endDrag = (e) => {
+  function onPointerUp() {
     if (!dragging) return;
     dragging = false;
-    sidebar.classList.remove('sheet-dragging');
-    sidebar.style.transform = '';
-    if (!moved) {
-      toggle();
-    } else {
-      const dy = e.clientY - startY;
-      const current = Math.max(0, Math.min(maxDrag(), startTranslate + dy));
-      if (current < maxDrag() / 2) expand();
-      else collapse();
-    }
-  };
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+    window.removeEventListener('pointercancel', onPointerUp);
 
-  handle.addEventListener('pointerup', endDrag);
-  handle.addEventListener('pointercancel', endDrag);
+    if (!moved) {
+      goTo(cycle[state]);
+    } else {
+      goTo(nearestState(currentY));
+    }
+  }
+
+  handle.addEventListener('pointerdown', onPointerDown);
+
+  // Initialize to the collapsed position once layout has settled.
+  requestAnimationFrame(() => goTo('collapsed'));
 }
 
 // ---------------- Map interactions ----------------
