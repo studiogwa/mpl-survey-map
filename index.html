@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rockford Historic Industrial Property Survey Map — Studio GWA</title>
+<meta name="description" content="Explore Studio GWA's historic survey of Rockford's industrial buildings and check whether a property sits in a TIF District, Opportunity Zone, or the River Edge Redevelopment Zone." />
+<meta property="og:title" content="Rockford Historic Industrial Property Survey Map — Studio GWA" />
+<meta property="og:description" content="Search Rockford's surveyed historic industrial properties and check TIF, Opportunity Zone, and River Edge Redevelopment Zone status instantly." />
+<meta property="og:type" content="website" />
+
+<link rel="preconnect" href="https://api.mapbox.com" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+
+<link rel="stylesheet" href="style.css" />
+
+<!-- Google Analytics (GA4) — replace G-XXXXXXXXXX with the real Measurement ID before publishing -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+</head>
+<body>
+
+<!-- ===================== SPLASH SCREEN ===================== -->
+<div id="splash">
+  <div class="splash-inner">
+    <img src="assets/gwa-logo-notag-white.png" alt="Studio GWA" class="splash-logo" />
+    <h1 class="splash-title">Rockford Historic Industrial<br />Property Survey Map</h1>
+    <p class="splash-sub" id="splash-status">Loading survey data&hellip;</p>
+    <div class="splash-bar"><div class="splash-bar-fill" id="splash-progress"></div></div>
+  </div>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header id="site-header">
+  <a href="https://www.studiogwa.com" target="_blank" rel="noopener" class="header-brand">
+    <img src="assets/gwa-logo.png" alt="Studio GWA" class="header-logo" />
+    <span class="header-tagline">Plan &middot; Design &middot; Develop</span>
+  </a>
+  <div class="header-title">
+    <span class="header-title-main">Rockford Historic Industrial Property Survey Map</span>
+    <span class="header-title-sub">Studio GWA Survey &middot; <span id="parcel-count">89</span> Properties</span>
+  </div>
+</header>
+
+<!-- ===================== MAIN LAYOUT ===================== -->
+<main id="app">
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sidebar-search-block">
+      <h2 class="sidebar-hed">Is this property in a <em>TIF District, Opportunity Zone,<br/>or River Edge Redevelopment Zone?</em></h2>
+      <p class="sidebar-copy">Search any surveyed Rockford industrial address to check incentive-zone status and property details instantly.</p>
+      <div class="search-box">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" id="search-input" placeholder="Search an address or building name&hellip;" autocomplete="off" />
+        <button id="search-clear" class="search-clear" title="Clear" aria-label="Clear search">&times;</button>
+      </div>
+      <div id="search-results" class="search-results"></div>
+    </div>
+
+    <div class="sidebar-legend">
+      <h3>Map Layers</h3>
+      <ul class="legend-list">
+        <li><label><input type="checkbox" data-layer="tif" checked /><span class="swatch swatch-tif"></span>TIF Districts</label></li>
+        <li><label><input type="checkbox" data-layer="oz" checked /><span class="swatch swatch-oz"></span>Opportunity Zones</label></li>
+        <li><label><input type="checkbox" data-layer="rerz" checked /><span class="swatch swatch-rerz"></span>River Edge Redevelopment Zone</label></li>
+        <li><label><input type="checkbox" data-layer="parcels" checked /><span class="swatch swatch-parcels"></span>Surveyed Properties</label></li>
+      </ul>
+    </div>
+
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">🏭</div>
+      <h3>Search a surveyed property</h3>
+      <p>Enter an address or building name above to view TIF, Opportunity Zone, and River Edge Redevelopment Zone status from the Studio GWA historic industrial survey.</p>
+    </div>
+
+    <!-- ============ PROJECT SNAPSHOT PANEL ============ -->
+    <div id="snapshot" class="snapshot hidden">
+      <button id="snapshot-back" class="snapshot-back">&larr; Back to search</button>
+
+      <div class="snapshot-header">
+        <h2 id="snap-address">&mdash;</h2>
+        <p id="snap-buildingname" class="snap-buildingname"></p>
+        <div class="snapshot-actions">
+          <button id="snap-copy" class="icon-btn" title="Copy link"><span>&#128279;</span> Copy link</button>
+          <button id="snap-share" class="icon-btn" title="Share"><span>&#8599;</span> Share</button>
+        </div>
+        <span id="snap-toast" class="snap-toast">Link copied to clipboard</span>
+      </div>
+
+      <div class="snapshot-status">
+        <div class="status-row" id="status-tif">
+          <span class="status-icon"></span>
+          <span class="status-label">TIF District</span>
+          <span class="status-value" id="status-tif-value">&mdash;</span>
+        </div>
+        <div class="status-row" id="status-oz">
+          <span class="status-icon"></span>
+          <span class="status-label">Opportunity Zone</span>
+          <span class="status-value" id="status-oz-value">&mdash;</span>
+        </div>
+        <div class="status-row" id="status-rerz">
+          <span class="status-icon"></span>
+          <span class="status-label">River Edge Redevelopment Zone</span>
+          <span class="status-value" id="status-rerz-value">&mdash;</span>
+        </div>
+      </div>
+
+      <div class="snapshot-body">
+        <h3 class="snap-sectionhed">Property Profile</h3>
+        <dl class="snap-facts" id="snap-facts"></dl>
+
+        <div id="snap-notes-wrap" class="snap-notes-wrap hidden">
+          <h3 class="snap-sectionhed">Notes</h3>
+          <p id="snap-notes" class="snap-notes"></p>
+        </div>
+
+        <h3 class="snap-sectionhed">Nearby Surveyed Properties</h3>
+        <ul id="snap-nearby" class="snap-nearby"></ul>
+
+        <img src="assets/gwa-ellipsis.png" alt="" class="snap-ellipsis" />
+
+        <p class="snap-footnote">Data: Studio GWA Historic Industrial Property Survey &middot; City of Rockford GIS (TIF, OZ, RERZ boundaries) &middot; Not legal, financial, or tax advice.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Map -->
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="map-popup-root"></div>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
