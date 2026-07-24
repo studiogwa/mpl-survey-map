@@ -166,7 +166,13 @@ button { font-family: inherit; cursor: pointer; }
   text-decoration: none;
   color: inherit;
 }
-.header-logo { height: 30px; display: block; }
+.header-logo {
+  height: 30px;
+  width: auto;
+  max-width: none;
+  flex-shrink: 0;
+  display: block;
+}
 .header-tagline {
   font-family: var(--font-serif);
   font-style: italic;
@@ -223,10 +229,50 @@ button { font-family: inherit; cursor: pointer; }
 }
 #map { position: absolute; inset: 0; }
 
+/* ---- Mobile: bottom sheet over a full-screen map (Option A) ----
+   The map fills the whole screen below the header; the sidebar becomes
+   a draggable sheet anchored to the bottom, collapsed to a small "peek"
+   (handle + search bar) by default. Tap the handle or drag it up to
+   reveal the legend, search results, or a selected property's snapshot.
+   Desktop (>860px) is completely unaffected by this block. ------------- */
+.sheet-handle { display: none; }
+
 @media (max-width: 860px) {
   #app { flex-direction: column; }
-  #sidebar { width: 100%; min-width: 0; height: 46%; border-right: none; border-bottom: 1px solid var(--gwa-border); }
-  #map-wrap { height: 54%; }
+
+  #map-wrap { position: fixed; top: var(--header-h); left: 0; right: 0; bottom: 0; height: auto; }
+
+  #sidebar {
+    position: fixed;
+    top: var(--header-h);
+    left: 0; right: 0; bottom: 0;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    border-right: none;
+    border-top: 1px solid var(--gwa-border);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.14);
+    z-index: 400;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    transform: translateY(calc(100% - var(--sheet-peek, 108px)));
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  #sidebar.sheet-dragging { transition: none; }
+  #sidebar.sheet-expanded { transform: translateY(0); }
+
+  .sheet-handle {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 2px;
+    cursor: grab;
+    touch-action: none;
+    flex-shrink: 0;
+  }
+  .sheet-handle-bar { width: 36px; height: 4px; border-radius: 2px; background: var(--gwa-border); }
+
+  .sidebar-hed, .sidebar-copy { display: none; }
+  .sidebar-search-block { padding: 4px 20px 14px; border-bottom: none; flex-shrink: 0; }
 }
 
 /* ===================== SEARCH ===================== */

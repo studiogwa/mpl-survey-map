@@ -221,6 +221,7 @@ async function init() {
   bindMapInteractions();
   bindUI();
   bindLayerToggles();
+  initSheet();
   checkDeepLink();
 }
 
@@ -241,6 +242,71 @@ function fitToParcels() {
   const bounds = new mapboxgl.LngLatBounds();
   centroidsData.features.forEach((f) => bounds.extend(f.geometry.coordinates));
   map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 0 });
+}
+
+// ---------------- Mobile bottom sheet (Option A) ----------------
+// Only affects layout under the 860px breakpoint defined in style.css.
+// The sheet starts collapsed to a "peek" (handle + search bar); tapping
+// the handle or dragging it up reveals the full panel. No-op on desktop.
+const SHEET_PEEK_PX = 108;
+let sheetExpandFn = null;
+let sheetCollapseFn = null;
+
+function initSheet() {
+  const sidebar = document.getElementById('sidebar');
+  const handle = document.getElementById('sheet-handle');
+  if (!sidebar || !handle) return;
+
+  let dragging = false;
+  let moved = false;
+  let startY = 0;
+  let startTranslate = 0;
+
+  const isMobile = () => window.matchMedia('(max-width: 860px)').matches;
+  const maxDrag = () => sidebar.offsetHeight - SHEET_PEEK_PX;
+
+  const expand = () => sidebar.classList.add('sheet-expanded');
+  const collapse = () => sidebar.classList.remove('sheet-expanded');
+  const toggle = () => sidebar.classList.toggle('sheet-expanded');
+
+  sheetExpandFn = () => { if (isMobile()) expand(); };
+  sheetCollapseFn = () => { if (isMobile()) collapse(); };
+
+  handle.addEventListener('pointerdown', (e) => {
+    if (!isMobile()) return;
+    dragging = true;
+    moved = false;
+    startY = e.clientY;
+    startTranslate = sidebar.classList.contains('sheet-expanded') ? 0 : maxDrag();
+    sidebar.classList.add('sheet-dragging');
+    handle.setPointerCapture(e.pointerId);
+  });
+
+  handle.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dy = e.clientY - startY;
+    if (Math.abs(dy) > 4) moved = true;
+    const next = Math.max(0, Math.min(maxDrag(), startTranslate + dy));
+    sidebar.style.transform = `translateY(${next}px)`;
+  });
+
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    sidebar.classList.remove('sheet-dragging');
+    sidebar.style.transform = '';
+    if (!moved) {
+      toggle();
+    } else {
+      const dy = e.clientY - startY;
+      const current = Math.max(0, Math.min(maxDrag(), startTranslate + dy));
+      if (current < maxDrag() / 2) expand();
+      else collapse();
+    }
+  };
+
+  handle.addEventListener('pointerup', endDrag);
+  handle.addEventListener('pointercancel', endDrag);
 }
 
 // ---------------- Map interactions ----------------
@@ -286,6 +352,7 @@ function bindUI() {
 function onSearchInput() {
   const q = els.searchInput.value.trim().toLowerCase();
   els.searchBox.classList.toggle('has-value', q.length > 0);
+  if (q) sheetExpandFn?.(); // on mobile, reveal the sheet so results are visible
   if (!q) {
     els.searchResults.innerHTML = '';
     return;
@@ -343,6 +410,7 @@ function selectParcel(id, flyTo) {
   els.searchResults.innerHTML = '';
 
   renderSnapshot(feature);
+  sheetExpandFn?.(); // on mobile, reveal the sheet so the snapshot is visible
 
   if (flyTo) {
     const bounds = boundsOfGeometry(feature.geometry);
@@ -362,6 +430,7 @@ function deselectParcel() {
   selectedId = null;
   els.snapshot.classList.add('hidden');
   els.emptyState.classList.remove('hidden');
+  sheetCollapseFn?.(); // on mobile, tuck the sheet back to a peek
   const url = new URL(window.location.href);
   url.searchParams.delete('p');
   window.history.replaceState({}, '', url);
