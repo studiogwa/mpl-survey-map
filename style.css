@@ -278,7 +278,50 @@ button { font-family: inherit; cursor: pointer; }
 
   .sidebar-hed, .sidebar-copy { display: none; }
   .sidebar-search-block { padding: 0 20px 14px; border-bottom: none; flex-shrink: 0; }
+
+  /* iOS Safari auto-zooms the page on focus if an input's font-size is
+     under 16px — bump it here (mobile only) to prevent that. */
+  #search-input { font-size: 16px; }
+
+  /* Layer toggles move to a floating control over the map (see
+     .mobile-layers below) so the sheet stays focused on search/results. */
+  .sidebar-legend { display: none; }
+
+  .mobile-layers { display: block; }
 }
+
+/* ---- Floating layer toggle (mobile only) ---- */
+.mobile-layers {
+  display: none;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 350;
+}
+.mobile-layers-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gwa-white);
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.16);
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gwa-text);
+}
+.mobile-layers-icn { font-size: 12px; color: var(--gwa-mid-green); }
+.mobile-layers-panel {
+  margin-top: 8px;
+  background: var(--gwa-white);
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  padding: 14px 16px;
+  min-width: 220px;
+}
+.mobile-layers-panel .legend-list { gap: 12px; }
+.mobile-layers-panel label { font-size: 14px; }
 
 /* ===================== SEARCH ===================== */
 .sidebar-search-block { padding: 24px 24px 16px; border-bottom: 1px solid var(--gwa-border); }

@@ -221,6 +221,7 @@ async function init() {
   bindMapInteractions();
   bindUI();
   bindLayerToggles();
+  bindMobileLayersControl();
   initSheet();
   checkDeepLink();
 }
@@ -235,6 +236,25 @@ function bindLayerToggles() {
         if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visibility);
       });
     });
+  });
+}
+
+function bindMobileLayersControl() {
+  const toggle = document.getElementById('mobile-layers-toggle');
+  const panel = document.getElementById('mobile-layers-panel');
+  const wrap = document.getElementById('mobile-layers');
+  if (!toggle || !panel || !wrap) return;
+
+  toggle.addEventListener('click', () => {
+    const open = panel.classList.toggle('hidden') === false;
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target)) {
+      panel.classList.add('hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
   });
 }
 
