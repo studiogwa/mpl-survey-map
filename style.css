@@ -77,6 +77,7 @@
 }
 
 * { box-sizing: border-box; }
+img { max-width: 100%; }
 html, body {
   margin: 0;
   padding: 0;
@@ -339,7 +340,7 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--gwa-text-muted);
   flex: 1;
 }
-.empty-icon-ellipsis { height: 16px; margin-bottom: 18px; opacity: 0.65; }
+.empty-icon-ellipsis { display: block; height: 10px; width: auto; max-width: 90px; margin: 0 auto 18px; opacity: 0.6; }
 .empty-state h3 { font-family: var(--font-heading); font-size: 16px; color: var(--gwa-text); margin: 0 0 8px; }
 .empty-state p { font-size: 13px; line-height: 1.55; margin: 0; }
 
