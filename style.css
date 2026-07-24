@@ -240,56 +240,6 @@ button { font-family: inherit; cursor: pointer; }
    Desktop (>860px) is completely unaffected by this block. ------------- */
 .sheet-handle { display: none; }
 
-@media (max-width: 860px) {
-  #app { flex-direction: column; }
-
-  #map-wrap { position: fixed; top: var(--header-h); left: 0; right: 0; bottom: 0; height: auto; }
-
-  #sidebar {
-    position: fixed;
-    top: var(--header-h);
-    left: 0; right: 0; bottom: 0;
-    width: 100%;
-    min-width: 0;
-    height: auto;
-    border-right: none;
-    border-top: 1px solid var(--gwa-border);
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -6px 20px rgba(0,0,0,0.14);
-    z-index: 400;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-    transform: translateY(var(--sheet-y, calc(100% - 108px)));
-    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
-    will-change: transform;
-  }
-  #sidebar.sheet-dragging { transition: none; }
-
-  .sheet-handle {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 14px 0 12px;
-    cursor: grab;
-    touch-action: none;
-    flex-shrink: 0;
-  }
-  .sheet-handle-bar { width: 36px; height: 4px; border-radius: 2px; background: var(--gwa-border); }
-
-  .sidebar-hed, .sidebar-copy { display: none; }
-  .sidebar-search-block { padding: 0 20px 14px; border-bottom: none; flex-shrink: 0; }
-
-  /* iOS Safari auto-zooms the page on focus if an input's font-size is
-     under 16px — bump it here (mobile only) to prevent that. */
-  #search-input { font-size: 16px; }
-
-  /* Layer toggles move to a floating control over the map (see
-     .mobile-layers below) so the sheet stays focused on search/results. */
-  .sidebar-legend { display: none; }
-
-  .mobile-layers { display: block; }
-}
-
 /* ---- Floating layer toggle (mobile only) ---- */
 .mobile-layers {
   display: none;
@@ -587,3 +537,60 @@ button { font-family: inherit; cursor: pointer; }
 /* Mapbox default control tweaks */
 .mapboxgl-ctrl-top-right { top: 12px; right: 12px; }
 .mapboxgl-ctrl-group { border-radius: 8px !important; overflow: hidden; }
+
+/* ============================================================
+   MOBILE OVERRIDES (Option A — bottom sheet)
+   Deliberately placed at the very end of the file: every rule in
+   here needs to win the cascade over its desktop counterpart above,
+   and since a @media block carries no extra specificity, source
+   order is what decides — so this must come last, not first.
+   ============================================================ */
+@media (max-width: 860px) {
+  #app { flex-direction: column; }
+
+  #map-wrap { position: fixed; top: var(--header-h); left: 0; right: 0; bottom: 0; height: auto; }
+
+  #sidebar {
+    position: fixed;
+    top: var(--header-h);
+    left: 0; right: 0; bottom: 0;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    border-right: none;
+    border-top: 1px solid var(--gwa-border);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.14);
+    z-index: 400;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    transform: translateY(var(--sheet-y, calc(100% - 108px)));
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+  }
+  #sidebar.sheet-dragging { transition: none; }
+
+  .sheet-handle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 0 12px;
+    cursor: grab;
+    touch-action: none;
+    flex-shrink: 0;
+  }
+  .sheet-handle-bar { width: 36px; height: 4px; border-radius: 2px; background: var(--gwa-border); }
+
+  .sidebar-hed, .sidebar-copy { display: none; }
+  .sidebar-search-block { padding: 0 20px 14px; border-bottom: none; flex-shrink: 0; }
+
+  /* iOS Safari auto-zooms the page on focus if an input's font-size is
+     under 16px — bump it here (mobile only) to prevent that. */
+  #search-input { font-size: 16px; }
+
+  /* Layer toggles move to a floating control over the map (see
+     .mobile-layers above) so the sheet stays focused on search/results. */
+  .sidebar-legend { display: none; }
+
+  .mobile-layers { display: block; }
+}

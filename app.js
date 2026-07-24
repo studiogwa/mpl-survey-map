@@ -489,13 +489,24 @@ function selectParcel(id, flyTo) {
 
   if (flyTo) {
     const bounds = boundsOfGeometry(feature.geometry);
-    map.fitBounds(bounds, { padding: 140, maxZoom: 17, duration: 900 });
+    map.fitBounds(bounds, { padding: framingPadding(), maxZoom: 17, duration: 900 });
   }
 
   // update URL for shareability without reloading
   const url = new URL(window.location.href);
   url.searchParams.set('p', id);
   window.history.replaceState({}, '', url);
+}
+
+// Padding for fitBounds that keeps the framed feature clear of whatever's
+// currently covering the map — the 400px sidebar on desktop, or the
+// half-open bottom sheet on mobile (see initSheet's SHEET_HALF_RATIO).
+function framingPadding() {
+  const isMobile = window.matchMedia('(max-width: 860px)').matches;
+  if (!isMobile) return 140;
+  const headerH = 72;
+  const sheetHalfPx = Math.round((window.innerHeight - headerH) * 0.48);
+  return { top: 50, bottom: sheetHalfPx + 40, left: 40, right: 40 };
 }
 
 function deselectParcel() {
@@ -506,6 +517,14 @@ function deselectParcel() {
   els.snapshot.classList.add('hidden');
   els.emptyState.classList.remove('hidden');
   sheetCollapseFn?.(); // on mobile, tuck the sheet back to a peek
+
+  // reset the map to the full survey extent
+  if (centroidsData) {
+    const bounds = new mapboxgl.LngLatBounds();
+    centroidsData.features.forEach((f) => bounds.extend(f.geometry.coordinates));
+    map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 900 });
+  }
+
   const url = new URL(window.location.href);
   url.searchParams.delete('p');
   window.history.replaceState({}, '', url);
